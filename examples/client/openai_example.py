@@ -5,6 +5,16 @@ PyCDN OpenAI Integration Example
 This example demonstrates how to use the OpenAI package via PyCDN,
 showcasing real-world usage of external packages through CDN delivery.
 
+Usage:
+    # First start a server:
+    python examples/server/basic_server.py
+    
+    # Set API key (optional for mock demo):
+    export OPENAI_API_KEY="your-key-here"
+    
+    # Then run this client:
+    python examples/client/openai_example.py
+
 Note: This example requires the OpenAI package to be installed on the server
 and a valid OpenAI API key for actual API calls.
 """
@@ -14,7 +24,7 @@ import os
 import time
 
 # Add parent directory to path for local development
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../..'))
 
 import pycdn
 from pycdn.utils.common import set_debug_mode

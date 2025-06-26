@@ -11,12 +11,23 @@ Features demonstrated:
 3. Package monitoring and logging
 4. Terminal forwarding capabilities
 5. Progress tracking for long-running operations
+
+Usage:
+    # First start a server:
+    python examples/server/basic_server.py
+    
+    # Then run this streaming demo:
+    python examples/client/streaming_demo.py
 """
 
+import sys
+import os
 import asyncio
 import time
 import threading
 from typing import Any, Dict
+
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../..'))
 
 import pycdn
 from pycdn.client.core import CDNClient

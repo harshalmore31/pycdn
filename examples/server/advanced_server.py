@@ -11,7 +11,7 @@ import sys
 import os
 
 # Add parent directory to path for local development
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../..'))
 
 from pycdn.server import CDNServer, PackageDeployer
 from pycdn.utils.common import set_debug_mode

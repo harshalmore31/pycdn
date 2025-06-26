@@ -3,6 +3,13 @@ PyCDN Client Example
 
 This example demonstrates how to use the PyCDN client to consume packages
 from a CDN server with lazy loading.
+
+Usage:
+    # First start a server:
+    python examples/server/basic_server.py
+    
+    # Then run this client:
+    python examples/client/client_example.py
 """
 
 import sys
@@ -10,7 +17,7 @@ import os
 import time
 
 # Add parent directory to path for local development
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../..'))
 
 import pycdn
 from pycdn.utils.common import set_debug_mode

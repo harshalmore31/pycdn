@@ -4,8 +4,19 @@ PyCDN Basic Usage Example
 This example demonstrates the core functionality of PyCDN - 
 using Python packages remotely without local installation.
 
+Usage:
+    # First start a server:
+    python examples/server/basic_server.py
+    
+    # Then run this client:
+    python examples/client/basic_usage.py
+
 Perfect for getting started with PyCDN!
 """
+
+import sys
+import os
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../..'))
 
 import pycdn
 

@@ -10,7 +10,7 @@ License: Apache-2.0
 Version: 0.1.0
 """
 
-__version__ = "1.0.0"
+__version__ = "1.0.1"
 __author__ = "Harshal More"
 __email__ = "harshalmore2468@gmail.com"
 __license__ = "Apache-2.0"
