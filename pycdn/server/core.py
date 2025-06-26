@@ -179,7 +179,7 @@ class CDNServer:
         )
         
         # Initialize package runtime
-        self.runtime = PackageRuntime(allowed_packages=allowed_packages)
+        self.runtime = PackageRuntime()
         
         # WebSocket connections for streaming output
         self.active_connections: Set[WebSocket] = set()
@@ -194,9 +194,9 @@ class CDNServer:
             "start_time": time.time()
         }
         
-        # Setup routes
-        self._setup_routes()
+        # Setup routes and middleware
         self._setup_middleware()
+        self._setup_routes()
     
     def _setup_middleware(self):
         self.app.add_middleware(
@@ -265,8 +265,11 @@ class CDNServer:
         
         @self.app.get("/packages", response_model=List[str])
         async def list_packages():
-            """List all loaded packages."""
-            return self.runtime.list_loaded_packages()
+            """List all available packages."""
+            if self.allowed_packages:
+                return list(self.allowed_packages)
+            else:
+                return self.runtime.list_loaded_packages()
         
         @self.app.get("/stats", response_model=ServerStats)
         async def get_stats():

@@ -10,13 +10,14 @@ License: Apache-2.0
 Version: 0.1.0
 """
 
-__version__ = "0.1.0"
+__version__ = "1.0.0"
 __author__ = "Harshal More"
 __email__ = "harshalmore2468@gmail.com"
 __license__ = "Apache-2.0"
 
 # Core client functionality
 from .client.core import CDNClient, pkg, connect, configure, preload
+from .client.import_hook import install_import_hook, uninstall_import_hook
 
 # Server functionality 
 from .server.core import CDNServer, PackageDeployer
@@ -32,6 +33,8 @@ __all__ = [
     "configure",
     "preload",
     "CDNClient",
+    "install_import_hook",
+    "uninstall_import_hook",
     
     # Server API
     "CDNServer",

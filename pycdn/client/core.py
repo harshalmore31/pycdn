@@ -265,6 +265,26 @@ class CDNClient:
             except Exception as e:
                 log_debug(f"Failed to preload {package_name}: {e}")
     
+    def call_function(self, package_name: str, function_name: str, 
+                     args: tuple = (), kwargs: dict = None, 
+                     stream_output: bool = False, 
+                     output_handler: Optional[Callable] = None) -> Any:
+        """Call a function on the CDN server with optional output streaming."""
+        if kwargs is None:
+            kwargs = {}
+            
+        # Use regular execution for now (streaming can be added later)
+        serialized_args = serialize_args(*args, **kwargs)
+        result = self._execute_request(package_name, function_name, serialized_args)
+        
+        # Handle captured output if present
+        if result.get("stdout"):
+            print(result["stdout"], end="")
+        if result.get("stderr"):
+            print(result["stderr"], end="", file=__import__("sys").stderr)
+        
+        return deserialize_result(result)
+
     def close(self) -> None:
         """Close the HTTP client."""
         self.http_client.close()

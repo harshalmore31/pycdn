@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 PyCDN Basic Usage Example
 
@@ -90,12 +89,13 @@ def main():
     
     try:
         # Install import hook for automatic CDN package loading
-        pycdn.install_import_hook("http://localhost:8000")
+        pycdn.install_import_hook("http://localhost:8000", ["cdn_", "pycdn_", "remote_"])
         
         # Now you can import packages as if they were local!
         # Note: This is advanced usage and requires the import hook
         print("✨ Import hook installed!")
         print("   You can now use 'from cdn_math import sqrt' syntax")
+        print("   Prefixes: cdn_, pycdn_, remote_")
         
         # Uninstall hook
         pycdn.uninstall_import_hook()

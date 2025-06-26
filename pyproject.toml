@@ -3,8 +3,8 @@ requires = ["setuptools>=61.0", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "pycdn-harshal-test"
-version = "0.1.0"
+name = "pycdn"
+version = "1.0.0"
 description = "Revolutionary Python package delivery via CDN with serverless execution and lazy loading"
 authors = [
     {name = "Harshal More", email = "harshalmore2468@gmail.com"}

@@ -237,4 +237,46 @@ def parse_size(size_str: str) -> int:
         if size_str.endswith(suffix):
             return int(float(size_str[:-1]) * multiplier)
     
-    return int(size_str) 
+    return int(size_str)
+
+
+# Aliases for transport functions (used by client code)
+def serialize_for_transport(data: Any) -> Any:
+    """
+    Serialize data for transport - alias for serialize_result.
+    """
+    if isinstance(data, (tuple, list)):
+        # For args/kwargs tuples
+        return base64.b64encode(cloudpickle.dumps(data)).decode('utf-8')
+    else:
+        # For single values
+        result = serialize_result(data)
+        return result.get("result")
+
+
+def deserialize_from_transport(data: Any) -> Any:
+    """
+    Deserialize data from transport - alias for deserialize_result.
+    """
+    if isinstance(data, str):
+        # Direct cloudpickle data
+        try:
+            return cloudpickle.loads(base64.b64decode(data))
+        except:
+            # Fallback to JSON
+            try:
+                return json.loads(data)
+            except:
+                return data
+    elif isinstance(data, dict) and "result" in data:
+        # Structured result format
+        return deserialize_result(data)
+    else:
+        return data
+
+
+def parse_cache_size(size_str: Union[str, int]) -> int:
+    """
+    Parse cache size - alias for parse_size.
+    """
+    return parse_size(size_str) 

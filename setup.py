@@ -14,8 +14,8 @@ def read_requirements(filename):
         return [line.strip() for line in f if line.strip() and not line.startswith('#')]
 
 setup(
-    name="pycdn-harshal-test",
-    version="0.1.0",
+    name="pycdn",
+    version="1.0.0",
     author="Harshal More",
     author_email="harshalmore2468@gmail.com",
     description="Revolutionary Python package delivery via CDN with serverless execution and lazy loading",

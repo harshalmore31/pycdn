@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 PyCDN Streaming Demo - Runtime Environment with Terminal Output
 

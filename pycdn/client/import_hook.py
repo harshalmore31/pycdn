@@ -35,10 +35,11 @@ def install_import_hook(cdn_url: str, package_prefixes: list) -> None:
         _cdn_mappings[prefix] = cdn_url
     
     # Store original import function
-    _original_import = __builtins__.__import__
+    import builtins
+    _original_import = builtins.__import__
     
     # Replace with our custom import
-    __builtins__.__import__ = _custom_import
+    builtins.__import__ = _custom_import
     
     _hook_installed = True
     log_debug(f"Import hook installed for prefixes: {package_prefixes}")
@@ -54,7 +55,8 @@ def uninstall_import_hook() -> None:
     
     # Restore original import
     if _original_import:
-        __builtins__.__import__ = _original_import
+        import builtins
+        builtins.__import__ = _original_import
     
     # Clear state
     _hook_installed = False
