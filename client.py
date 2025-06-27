@@ -16,7 +16,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 def main():
-    print("🧬 PyCDN Hybrid Import System Demo - v1.1.1")
+    print(f"🧬 PyCDN Hybrid Import System Demo - v{pycdn.__version__}")
     print("=" * 60)
     print("🎯 Single system supporting BOTH classic & natural syntax!")
     

@@ -69,8 +69,8 @@ def main():
             print("   ✅ Basic CDN Functionality")
             print("   ❌ Many Advanced Features")
             
-        print(f"\n💡 Latest Available: 1.1.1")
-        if version < "1.1.1":
+        print(f"\n💡 Latest Available: 1.1.7")
+        if version < "1.1.7":
             print("🔄 Upgrade Command: pip install --upgrade pycdn")
             
     except ImportError:

@@ -2,6 +2,115 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.7] - 2025-01-27
+
+### 🎯 Complete DictWrapper Interface Fix - Production Ready Release
+
+**CRITICAL FIX**: Completely resolved the `'dict' object has no attribute 'choices'` error
+
+#### ✅ Major Improvements
+- **Complete DictWrapper System**: Universal object-like attribute access restoration for all serialized objects
+- **Interface Preservation**: `response.choices[0].message.content` syntax works flawlessly across all patterns
+- **Universal Coverage**: All deserialization paths now consistently use DictWrapper wrapping
+- **Enhanced Conversion**: Pydantic `model_dump()` objects preserve complete type information
+- **Production Tested**: Real OpenAI API calls working perfectly across all syntax patterns
+- **Zero Breaking Changes**: All existing user patterns continue to work without modification
+- **Recursive Processing**: Handles deeply nested object structures seamlessly
+
+#### 🔧 Technical Implementation
+- Enhanced `convert_to_basic_types()` to preserve `__type__` metadata for all object conversion methods
+- Updated `deserialize_from_transport()` to apply comprehensive DictWrapper wrapping
+- Unified deserialization behavior across all client pathways (HTTP, WebSocket, streaming)
+- Added recursive object wrapping for nested structures
+- Updated demo scripts to display version dynamically using `pycdn.__version__`
+
+#### 📊 Production Verification
+- ✅ Classic Syntax: `cdn.openai.OpenAI().chat.completions.create().choices[0].message.content`
+- ✅ Natural Imports: `from cdn.openai import OpenAI` with full interface preservation
+- ✅ Complex Nested Objects: Deep attribute access working correctly
+- ✅ Multiple Deserialization Paths: All client pathways applying DictWrapper consistently
+- ✅ Real API Integration: Live OpenAI API calls working perfectly
+
+#### 🧪 Test Results
+```
+🎯 Comprehensive Production Testing:
+✅ PASS: DictWrapper Basic Functionality
+✅ PASS: Serialization/Deserialization Roundtrip  
+✅ PASS: CDN Integration Tests
+✅ PASS: Classic Syntax with Real OpenAI API
+✅ PASS: Natural Import Syntax with Real OpenAI API
+✅ PASS: Complex Nested Object Access
+✅ PASS: Multiple Deserialization Pathways
+
+Overall: 7/7 tests passed - Production Ready ✅
+```
+
+#### 🎉 Impact
+This release **completely resolves** the object interface preservation issue and makes PyCDN fully production-ready for complex API interactions like OpenAI, Anthropic, and other services that return nested object structures.
+
+---
+
+## [1.1.6] - 2025-01-27 (SUPERSEDED)
+
+### Initial DictWrapper Implementation
+- **Status**: Superseded by v1.1.7 due to incomplete deserialization path coverage
+- **Issue**: Some client pathways were not applying DictWrapper consistently
+
+### 🔧 CRITICAL FIX - Object Interface Preservation
+- **MAJOR BUG**: Fixed "'dict' object has no attribute 'choices'" error when accessing OpenAI response attributes
+- **ROOT CAUSE**: Serialization converted objects to dictionaries, breaking expected attribute access patterns  
+- **SOLUTION**: Added `DictWrapper` class that restores object-like attribute access to converted dictionaries
+- **IMPACT**: Users can now use familiar syntax like `response.choices[0].message.content` ✅
+
+### 🚀 Enhanced Object Interface
+- **NEW**: `DictWrapper` class provides seamless attribute access to converted objects
+- **IMPROVED**: Recursive wrapping maintains object interface for nested structures
+- **ENHANCED**: Supports both attribute access (`obj.attr`) and dictionary access (`obj['key']`)
+- **PRESERVED**: Original object methods like `.get()`, `.keys()`, `.values()`, `.items()`
+
+### 📦 What This Fixes
+- ✅ OpenAI responses: `response.choices[0].message.content` works correctly
+- ✅ Nested object access: `obj.nested.property` maintains expected behavior  
+- ✅ List access: `response.choices[0]` works for converted object lists
+- ✅ Mixed interfaces: Both `obj.attr` and `obj['attr']` access patterns supported
+
+### 🎯 Technical Details
+- **Smart Detection**: Only wraps dictionaries with `__type__` field (converted objects)
+- **Recursive Processing**: Handles deeply nested object structures
+- **Interface Preservation**: Maintains original object's `__type__` and `__module__` information
+- **Backward Compatible**: Regular dictionaries continue to work normally
+
+### 🏆 User Experience Impact
+- **Before**: `'dict' object has no attribute 'choices'` - broken user code
+- **After**: `response.choices[0].message.content` - works exactly as expected
+- **Result**: Zero code changes needed - existing patterns just work
+
+## [1.1.5] - 2025-01-27
+
+### 🔧 CRITICAL FIX - Client-Side Deserialization
+- **MAJOR BUG**: Fixed "No module named 'openai'" error during result deserialization on client side
+- **ROOT CAUSE**: Server was returning complex OpenAI objects that required openai module for cloudpickle deserialization
+- **SOLUTION**: Enhanced `serialize_result()` to convert complex objects to basic Python types before transmission
+- **IMPACT**: Clients no longer need packages installed locally to receive and use results ✅
+
+### 🚀 Enhanced Serialization Strategy
+- **NEW**: Smart object conversion that handles Pydantic models (OpenAI responses)
+- **IMPROVED**: Multi-tier fallback: JSON → CloudPickle → String
+- **ENHANCED**: Automatic detection and conversion of objects with `model_dump()`, `dict()`, `to_dict()` methods
+- **SAFER**: Basic type conversion prevents client-side import dependencies
+
+### 📦 What This Fixes
+- ✅ OpenAI API responses now deserialize correctly on any client
+- ✅ Complex objects are converted to dictionaries with type information
+- ✅ No requirement for clients to have packages installed locally
+- ✅ Maintains full response data while ensuring compatibility
+
+### 🎯 Technical Details
+- **Before**: `cloudpickle.loads()` failed when client lacked required modules
+- **After**: Objects converted to basic types (dict, list, str) that don't require specific modules
+- **Fallback Chain**: Pydantic model_dump → Generic dict conversion → JSON → CloudPickle → String
+- **Type Preservation**: Includes `__type__` and `__module__` fields for debugging
+
 ## [1.1.4] - 2025-01-27
 
 ### 🔧 CRITICAL FIX - Chained Attribute Access

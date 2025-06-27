@@ -14,7 +14,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 def main():
-    print("🚀 PyCDN Client Example - v1.1.1")
+    print(f"🚀 PyCDN Client Example - v{pycdn.__version__}")
     print("=" * 50)
     
     # Get API key from environment
@@ -35,7 +35,7 @@ def main():
         print(f"📦 Import prefix registered: '{prefix}'")
         natural_imports_available = True
     except AttributeError:
-        print("📦 Using classic PyCDN (natural imports require PyCDN v1.1.1+)")
+        print(f"📦 Using classic PyCDN (natural imports require PyCDN v1.1.1+)")
         natural_imports_available = False
     
     print("\n" + "=" * 50)
@@ -84,7 +84,7 @@ def main():
             print(f"❌ Natural import error: {e}")
             print("   Note: This requires a running PyCDN server with OpenAI package")
     else:
-        print("📥 Please upgrade to PyCDN v1.1.1+ for natural import support:")
+        print(f"📥 Please upgrade to PyCDN v1.1.1+ for natural import support:")
         print("   pip install --upgrade pycdn")
         print("   Then you can use: from cdn.openai import OpenAI")
     

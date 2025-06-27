@@ -8,7 +8,7 @@ Revolutionary hybrid import system supporting both:
 All through the same backend with lazy loading, caching, and smart enhancements.
 """
 
-__version__ = "1.1.4"
+__version__ = "1.1.7"
 __author__ = "PyCDN Team"
 __description__ = "Revolutionary CDN-based Python package delivery with hybrid import system"
 
