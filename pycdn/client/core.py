@@ -308,19 +308,31 @@ _global_config = {
 }
 
 
-def pkg(url: str, **kwargs) -> LazyPackage:
+def pkg(url: str, prefix: str = None, **kwargs) -> LazyPackage:
     """
-    Connect to a CDN server and return a lazy package namespace.
+    Connect to a CDN server and return a lazy package namespace with import system integration.
     
     Args:
         url: CDN server URL
+        prefix: Import prefix (default: 'cdn')
         **kwargs: Additional client configuration
         
     Returns:
-        LazyPackage instance
+        LazyPackage instance with meta path integration
+        
+    Example:
+        >>> cdn = pycdn.pkg("http://localhost:8000")
+        >>> result = cdn.math.sqrt(16)  # Classic usage
+        
+        >>> # Or use natural import syntax:
+        >>> from cdn.openai import OpenAI  # Requires prefix='cdn'
+        >>> client = OpenAI(api_key="...")
     """
     client = CDNClient(url, **kwargs)
-    return LazyPackage(client)
+    # Default prefix to 'cdn' if not specified
+    if prefix is None:
+        prefix = "cdn"
+    return LazyPackage(client, prefix)
 
 
 def connect(url: str, **kwargs) -> CDNClient:

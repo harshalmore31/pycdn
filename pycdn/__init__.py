@@ -1,55 +1,113 @@
 """
-PyCDN - Revolutionary Python package delivery via CDN with serverless execution and lazy loading
+PyCDN - The Netflix of Python packages 🚀
 
-PyCDN eliminates dependency hell by delivering Python packages through a global CDN network 
-with intelligent lazy loading. No more `pip install` - just import and use packages instantly 
-from our edge-optimized servers.
+Revolutionary hybrid import system supporting both:
+- Classic access: cdn.openai.OpenAI()  
+- Natural imports: from cdn.openai import OpenAI
 
-Author: Harshal More <harshalmore2468@gmail.com>
-License: Apache-2.0
-Version: 0.1.0
+All through the same backend with lazy loading, caching, and smart enhancements.
 """
 
-__version__ = "1.0.4"
-__author__ = "Harshal More"
-__email__ = "harshalmore2468@gmail.com"
-__license__ = "Apache-2.0"
+__version__ = "1.1.1"
+__author__ = "PyCDN Team"
+__description__ = "Revolutionary CDN-based Python package delivery with hybrid import system"
 
-# Core client functionality
-from .client.core import CDNClient, pkg, connect, configure, preload
-from .client.import_hook import install_import_hook, uninstall_import_hook
+from .client import (
+    # Core client functionality
+    CDNClient, 
+    pkg,
+    
+    # Lazy loading system
+    LazyPackage,
+    LazyModule,
+    LazyFunction, 
+    LazyClass,
+    LazyInstance,
+    
+    # Hybrid import system - unified natural & classic syntax
+    register_hybrid_cdn,
+    unregister_hybrid_cdn,
+    get_hybrid_mappings,
+    clear_hybrid_mappings,
+    install_hybrid_finder,
+    uninstall_hybrid_finder,
+    HybridCDNProxy,
+    
+    # Legacy compatibility (for backward compatibility)
+    register_cdn_client,
+    unregister_cdn_client, 
+    get_cdn_mappings,
+    clear_cdn_mappings
+)
 
-# Server functionality 
-from .server.core import CDNServer, PackageDeployer
+from .server import CDNServer, PackageDeployer
 
-# Utility functions
-from .utils.common import get_version, set_debug_mode
-
-# Make primary functions available at package level
+# Export everything for easy access
 __all__ = [
-    # Client API
-    "pkg",
-    "connect", 
-    "configure",
-    "preload",
-    "CDNClient",
-    "install_import_hook",
-    "uninstall_import_hook",
-    
-    # Server API
-    "CDNServer",
-    "PackageDeployer",
-    
-    # Utilities
-    "get_version",
-    "set_debug_mode",
-    
-    # Metadata
+    # Version info
     "__version__",
     "__author__", 
-    "__email__",
-    "__license__",
+    "__description__",
+    
+    # Core client
+    "CDNClient",
+    "pkg",
+    
+    # Lazy loading system  
+    "LazyPackage",
+    "LazyModule",
+    "LazyFunction",
+    "LazyClass", 
+    "LazyInstance",
+    
+    # Hybrid import system (main interface)
+    "register_hybrid_cdn",
+    "unregister_hybrid_cdn",
+    "get_hybrid_mappings", 
+    "clear_hybrid_mappings",
+    "install_hybrid_finder",
+    "uninstall_hybrid_finder", 
+    "HybridCDNProxy",
+    
+    # Legacy compatibility 
+    "register_cdn_client",
+    "unregister_cdn_client",
+    "get_cdn_mappings",
+    "clear_cdn_mappings",
+    
+    # Server components
+    "CDNServer",
+    "PackageDeployer"
 ]
+
+# Convenience shortcuts
+connect = pkg  # Alternative name for pkg()
+
+def info():
+    """Display PyCDN information and capabilities."""
+    return {
+        "version": __version__,
+        "description": __description__,
+        "features": [
+            "🎯 Classic access: cdn.openai.OpenAI()",
+            "🌟 Natural imports: from cdn.openai import OpenAI", 
+            "⚡ Lazy loading with intelligent caching",
+            "📊 Built-in profiling and performance monitoring",
+            "🔄 Package aliasing and reload capabilities",
+            "🛠️ Development mode with local fallbacks",
+            "🔍 Advanced introspection and debugging tools",
+            "🌐 Multi-CDN support with custom prefixes"
+        ],
+        "hybrid_system": "Both syntax patterns use the same backend",
+        "smart_enhancements": [
+            "cdn.reload() - Force refresh packages",
+            "cdn.profile() - Get performance metrics", 
+            "cdn.alias() - Create package shortcuts",
+            "cdn.dev_mode() - Enable local fallbacks",
+            "cdn.list_packages() - Discover available packages",
+            "cdn.describe() - Get detailed symbol information"
+        ]
+    }
 
 # Initialize global configuration
 _global_config = {

@@ -1,14 +1,16 @@
 """
-Lazy loading mechanism for CDN packages.
+Lazy loading mechanism for CDN packages - Updated for Hybrid System.
 """
 
 import sys
 import inspect
 from types import ModuleType
-from typing import Any, Dict, Optional, Callable, Union
+from typing import Any, Dict, Optional, List, Callable, Union
 import httpx
 
 from ..utils.common import serialize_args, deserialize_result, log_debug
+from ..utils.encryption import get_global_encryption
+from .import_hook import register_hybrid_cdn, HybridCDNProxy
 
 
 class LazyFunction:
@@ -197,42 +199,40 @@ class LazyInstance:
         """Initialize the remote instance."""
         try:
             # For MVP, we skip actual remote instance creation and delegate to method calls
-            # The instance will be created on the server side when methods are called
-            log_debug(f"Lazy instance of {self._class_name} created with args: {len(self._init_args)} args, {len(self._init_kwargs)} kwargs")
-            
+            log_debug(f"Initialized lazy instance of {self._class_name}")
         except Exception as e:
             log_debug(f"Failed to initialize remote instance: {e}")
             raise e
     
     def __getattr__(self, name: str) -> Any:
         """
-        Lazy loading of instance attributes and methods.
+        Lazy attribute access for instance members.
         
         Args:
             name: Attribute name
             
         Returns:
-            Lazy attribute wrapper
+            LazyMethod for methods or LazyAttribute for other attributes
         """
         if name.startswith('_'):
-            raise AttributeError(f"'{self._class_name}' object has no attribute '{name}'")
+            raise AttributeError(f"'{self._class_name}' instance has no attribute '{name}'")
         
-        # Return lazy attribute wrapper that supports chained access
-        return LazyAttribute(
+        # Try to determine if this is a method or attribute
+        # For MVP, we assume everything is a method
+        return LazyMethod(
             self._cdn_client,
             self._package_name,
-            name,
+            f"{self._class_name}.{name}",
             self
         )
     
     def __repr__(self) -> str:
-        return f"<LazyInstance of '{self._class_name}' from '{self._cdn_client.url}'>"
+        return f"<LazyInstance of '{self._package_name}.{self._class_name}' from '{self._cdn_client.url}'>"
 
 
 class LazyAttribute:
     """
-    Lazy wrapper for remote attributes that supports chained access.
-    Can be both callable (method) and have attributes (nested objects).
+    Lazy wrapper for remote attributes (including nested attributes).
     """
     
     def __init__(
@@ -248,58 +248,57 @@ class LazyAttribute:
         Args:
             cdn_client: CDN client instance
             package_name: Name of the package
-            attribute_path: Full path to the attribute (e.g., "chat.completions.create")
-            instance: Parent lazy instance (if this is an instance attribute)
+            attribute_path: Full path to the attribute (e.g., "module.Class.attribute")
+            instance: Parent instance if this is an instance attribute
         """
         self._cdn_client = cdn_client
         self._package_name = package_name
         self._attribute_path = attribute_path
         self._instance = instance
+        
+        # Set metadata
+        parts = attribute_path.split('.')
+        self.__name__ = parts[-1]
+        self.__qualname__ = attribute_path
+        self.__module__ = package_name
     
     def __call__(self, *args, **kwargs) -> Any:
         """
-        Execute the remote method/callable.
+        Execute the attribute as a callable.
         
         Args:
-            *args: Method arguments
-            **kwargs: Method keyword arguments
+            *args: Positional arguments
+            **kwargs: Keyword arguments
             
         Returns:
-            Method execution result
+            Execution result
         """
         log_debug(f"Executing lazy attribute {self._attribute_path}")
         
         try:
-            if self._instance:
-                # Instance method call
-                request_data = {
-                    "instance_info": {
-                        "class_name": self._instance._class_name,
-                        "init_args": self._instance._init_args,
-                        "init_kwargs": self._instance._init_kwargs
-                    },
-                    "method_args": args,
-                    "method_kwargs": kwargs
-                }
-                method_name = f"{self._instance._class_name}.{self._attribute_path}"
-            else:
-                # Module function call
-                request_data = {
-                    "method_args": args,
-                    "method_kwargs": kwargs
-                }
-                method_name = self._attribute_path
+            # Serialize arguments
+            serialized_args = serialize_args(*args, **kwargs)
             
-            # Serialize the request data
-            serialized_args = serialize_args(request_data)
+            # Prepare request data
+            request_data = {
+                'package_name': self._package_name,
+                'function_name': self._attribute_path,
+                'serialized_args': serialized_args
+            }
             
-            # Execute remote method
+            # Add instance context if this is an instance method
+            if self._instance and hasattr(self._instance, '_init_args'):
+                request_data['instance_args'] = self._instance._init_args
+                request_data['instance_kwargs'] = self._instance._init_kwargs
+            
+            # Make request to CDN server
             response = self._cdn_client._execute_request(
                 self._package_name,
-                method_name,
+                self._attribute_path,
                 serialized_args
             )
             
+            # Deserialize and return result
             return deserialize_result(response)
             
         except Exception as e:
@@ -311,34 +310,31 @@ class LazyAttribute:
         Support chained attribute access.
         
         Args:
-            name: Next attribute name in the chain
+            name: Attribute name
             
         Returns:
-            New LazyAttribute for the chained access
+            LazyAttribute for chained access
         """
         if name.startswith('_'):
             raise AttributeError(f"'{self._attribute_path}' object has no attribute '{name}'")
         
-        # Create new attribute path
-        new_path = f"{self._attribute_path}.{name}"
-        
+        # Create nested attribute path
+        nested_path = f"{self._attribute_path}.{name}"
         return LazyAttribute(
             self._cdn_client,
             self._package_name,
-            new_path,
+            nested_path,
             self._instance
         )
     
     def __repr__(self) -> str:
-        if self._instance:
-            return f"<LazyAttribute '{self._attribute_path}' of {self._instance._class_name} from '{self._cdn_client.url}'>"
-        else:
-            return f"<LazyAttribute '{self._attribute_path}' from '{self._cdn_client.url}'>"
+        instance_info = f" (instance)" if self._instance else ""
+        return f"<LazyAttribute '{self._attribute_path}'{instance_info} from '{self._cdn_client.url}'>"
 
 
 class LazyMethod(LazyAttribute):
     """
-    Legacy LazyMethod class - now inherits from LazyAttribute for backward compatibility.
+    Specialized lazy wrapper for remote methods.
     """
     
     def __init__(
@@ -349,20 +345,21 @@ class LazyMethod(LazyAttribute):
         instance: LazyInstance
     ):
         """
-        Initialize lazy method (backward compatibility).
+        Initialize lazy method.
         
         Args:
             cdn_client: CDN client instance
             package_name: Name of the package
-            method_name: Name of the method
-            instance: Parent lazy instance
+            method_name: Name of the method (e.g., "Class.method")
+            instance: Parent instance
         """
         super().__init__(cdn_client, package_name, method_name, instance)
+        self._method_name = method_name
 
 
 class LazyModule(ModuleType):
     """
-    Lazy module wrapper for CDN packages.
+    Lazy module that loads package information on-demand.
     """
     
     def __init__(self, cdn_client: "CDNClient", package_name: str):
@@ -375,159 +372,241 @@ class LazyModule(ModuleType):
         """
         super().__init__(package_name)
         
-        self._cdn_client = cdn_client
-        self._package_name = package_name
-        self._loaded_attributes = {}
-        self._package_info = None
+        # Store CDN client reference
+        object.__setattr__(self, '_cdn_client', cdn_client)
+        object.__setattr__(self, '_package_name', package_name)
+        object.__setattr__(self, '_loaded_attributes', set())
+        object.__setattr__(self, '_package_info', None)
         
         # Set module metadata
         self.__name__ = package_name
         self.__package__ = package_name
-        self.__spec__ = None
-        self.__file__ = f"<CDN:{cdn_client.url}/{package_name}>"
-        self.__loader__ = None
+        self.__path__ = [f"cdn://{cdn_client.url}/{package_name}"]
         
-        # Load package information
+        log_debug(f"Created lazy module for {package_name}")
+        
+        # Load basic package information
         self._load_package_info()
     
     def _load_package_info(self) -> None:
-        """Load package information from CDN server."""
+        """Load basic package information from the CDN server."""
         try:
-            self._package_info = self._cdn_client.get_package_info(self._package_name)
-            log_debug(f"Loaded package info for {self._package_name}")
+            # This could fetch package metadata like available classes/functions
+            pass
         except Exception as e:
-            log_debug(f"Failed to load package info: {e}")
-            self._package_info = {"attributes": []}
+            log_debug(f"Failed to load package info for {self._package_name}: {e}")
     
     def __getattr__(self, name: str) -> Any:
         """
-        Lazy loading of module attributes.
+        Lazy attribute resolution for the module.
         
         Args:
             name: Attribute name
             
         Returns:
-            Lazy attribute wrapper
+            Resolved attribute (LazyClass, LazyFunction, or LazyAttribute)
         """
         if name.startswith('_'):
             raise AttributeError(f"module '{self._package_name}' has no attribute '{name}'")
         
-        # Check if already loaded
+        # Check if we've already loaded this attribute
         if name in self._loaded_attributes:
-            return self._loaded_attributes[name]
+            return object.__getattribute__(self, name)
         
-        # Check if attribute exists in package info
-        if self._package_info:
-            for attr in self._package_info.get("attributes", []):
-                if attr["name"] == name:
-                    # Create appropriate lazy wrapper
-                    if attr.get("callable", False):
-                        if attr.get("type") == "type":  # Class
-                            wrapper = LazyClass(
-                                self._cdn_client,
-                                self._package_name,
-                                name,
-                                f"{self._package_name}.{name}"
-                            )
-                        else:  # Function
-                            wrapper = LazyFunction(
-                                self._cdn_client,
-                                self._package_name,
-                                name,
-                                f"{self._package_name}.{name}"
-                            )
-                    else:
-                        # For non-callable attributes, we need to fetch the value
-                        wrapper = self._get_remote_attribute(name)
-                    
-                    self._loaded_attributes[name] = wrapper
-                    return wrapper
+        log_debug(f"Lazy loading attribute '{name}' from package '{self._package_name}'")
         
-        # If not found in package info, try to create a lazy function anyway
-        wrapper = LazyFunction(
-            self._cdn_client,
-            self._package_name,
-            name,
-            f"{self._package_name}.{name}"
-        )
-        self._loaded_attributes[name] = wrapper
-        return wrapper
+        try:
+            # Get remote attribute
+            result = self._get_remote_attribute(name)
+            
+            # Cache the attribute
+            object.__setattr__(self, name, result)
+            self._loaded_attributes.add(name)
+            
+            return result
+            
+        except Exception as e:
+            log_debug(f"Failed to load attribute '{name}': {e}")
+            raise AttributeError(f"module '{self._package_name}' has no attribute '{name}'")
     
     def _get_remote_attribute(self, name: str) -> Any:
         """
-        Get a remote attribute value.
+        Get an attribute from the remote CDN server.
         
         Args:
             name: Attribute name
             
         Returns:
-            Attribute value
+            Appropriate lazy wrapper for the attribute
         """
         try:
-            # Use a special function to get attribute values
-            serialized_args = serialize_args()
-            response = self._cdn_client._execute_request(
-                self._package_name,
-                f"__getattr__.{name}",
-                serialized_args
-            )
-            return deserialize_result(response)
+            # For MVP, we make a simple assumption about attribute types
+            # In production, this would query the server for metadata
+            
+            full_name = f"{self._package_name}.{name}"
+            
+            # Common class patterns (heuristic-based for MVP)
+            if name[0].isupper():  # Likely a class
+                return LazyClass(self._cdn_client, self._package_name, name, full_name)
+            else:  # Likely a function
+                return LazyFunction(self._cdn_client, self._package_name, name, full_name)
+                
         except Exception as e:
-            log_debug(f"Failed to get remote attribute {name}: {e}")
-            return None
+            log_debug(f"Failed to resolve remote attribute {name}: {e}")
+            # Fallback to generic attribute
+            return LazyAttribute(self._cdn_client, self._package_name, name)
     
     def __repr__(self) -> str:
         return f"<LazyModule '{self._package_name}' from '{self._cdn_client.url}'>"
     
     def __dir__(self) -> list:
         """Return list of available attributes."""
-        attrs = list(self._loaded_attributes.keys())
-        if self._package_info:
-            attrs.extend([attr["name"] for attr in self._package_info.get("attributes", [])])
-        return sorted(set(attrs))
+        # In production, this would query the server for available attributes
+        return list(self._loaded_attributes)
 
 
 class LazyPackage:
     """
-    Lazy package namespace for CDN packages.
+    Main entry point for lazy CDN packages with hybrid import support.
     """
     
-    def __init__(self, cdn_client: "CDNClient"):
+    def __init__(self, cdn_client: "CDNClient", prefix: str = "cdn"):
         """
-        Initialize lazy package.
+        Initialize lazy package with hybrid import support.
         
         Args:
             cdn_client: CDN client instance
+            prefix: Import prefix (default: "cdn")
         """
         self._cdn_client = cdn_client
+        self._prefix = prefix
         self._loaded_modules = {}
+        self._hybrid_root = None
+        
+        # Automatically enable hybrid imports
+        self._enable_hybrid_imports()
+        
+        log_debug(f"Created lazy package with prefix '{prefix}'")
+    
+    def _enable_hybrid_imports(self) -> None:
+        """Enable hybrid import system for this package."""
+        try:
+            # Register with the hybrid import system
+            self._hybrid_root = register_hybrid_cdn(self._cdn_client, self._prefix)
+            log_debug(f"Enabled hybrid imports for prefix '{self._prefix}'")
+        except Exception as e:
+            log_debug(f"Failed to enable hybrid imports: {e}")
     
     def __getattr__(self, name: str) -> LazyModule:
         """
-        Lazy loading of package modules.
+        Get a lazy module for the given package name.
         
         Args:
-            name: Module name
+            name: Package name
             
         Returns:
             LazyModule instance
         """
         if name.startswith('_'):
-            raise AttributeError(f"No attribute '{name}'")
+            raise AttributeError(f"LazyPackage has no attribute '{name}'")
         
-        # Check if already loaded
+        # Check cache first
         if name in self._loaded_modules:
             return self._loaded_modules[name]
         
-        # Create lazy module
-        module = LazyModule(self._cdn_client, name)
-        self._loaded_modules[name] = module
+        log_debug(f"Creating lazy module for package '{name}'")
         
-        return module
+        # Create lazy module
+        lazy_module = LazyModule(self._cdn_client, name)
+        
+        # Cache it
+        self._loaded_modules[name] = lazy_module
+        
+        return lazy_module
+    
+    def set_prefix(self, prefix: str) -> None:
+        """
+        Set a custom import prefix for this CDN connection.
+        
+        Args:
+            prefix: New prefix name (e.g., "mycdn", "internal")
+        """
+        old_prefix = self._prefix
+        self._prefix = prefix
+        
+        # Re-register with new prefix
+        try:
+            if self._hybrid_root:
+                # Unregister old prefix
+                from .import_hook import unregister_hybrid_cdn
+                unregister_hybrid_cdn(old_prefix)
+                
+                # Register with new prefix
+                self._hybrid_root = register_hybrid_cdn(self._cdn_client, prefix)
+                
+            log_debug(f"Changed import prefix from '{old_prefix}' to '{prefix}'")
+        except Exception as e:
+            log_debug(f"Failed to change prefix: {e}")
+            # Revert on failure
+            self._prefix = old_prefix
+            raise
+    
+    def reload(self, package_name: str = None) -> str:
+        """
+        Reload packages (delegated to hybrid system).
+        
+        Args:
+            package_name: Specific package to reload, or None for all
+            
+        Returns:
+            Status message
+        """
+        if self._hybrid_root:
+            return self._hybrid_root.reload(package_name)
+        else:
+            # Fallback for non-hybrid mode
+            if package_name:
+                if package_name in self._loaded_modules:
+                    del self._loaded_modules[package_name]
+                return f"✅ Reloaded {package_name}"
+            else:
+                self._loaded_modules.clear()
+                return "✅ Reloaded all packages"
+    
+    def profile(self, package_name: str = None) -> Dict[str, Any]:
+        """Get profiling data (delegated to hybrid system)."""
+        if self._hybrid_root:
+            return self._hybrid_root.profile(package_name)
+        return {}
+    
+    def alias(self, original_name: str, alias_name: str) -> str:
+        """Create package alias (delegated to hybrid system)."""
+        if self._hybrid_root:
+            return self._hybrid_root.alias(original_name, alias_name)
+        return f"✅ Created alias: {alias_name} -> {original_name}"
+    
+    def dev_mode(self, enabled: bool = True, local_packages: Dict[str, Any] = None) -> str:
+        """Enable dev mode (delegated to hybrid system)."""
+        if self._hybrid_root:
+            return self._hybrid_root.dev_mode(enabled, local_packages)
+        return f"✅ Dev mode {'enabled' if enabled else 'disabled'}"
+    
+    def list_packages(self) -> List[str]:
+        """List available packages (delegated to hybrid system)."""
+        if self._hybrid_root:
+            return self._hybrid_root.list_packages()
+        return list(self._loaded_modules.keys())
+    
+    def describe(self, symbol_path: str) -> Dict[str, Any]:
+        """Describe a symbol (delegated to hybrid system)."""
+        if self._hybrid_root:
+            return self._hybrid_root.describe(symbol_path)
+        return {"error": "Description not available"}
     
     def __repr__(self) -> str:
-        return f"<LazyPackage from '{self._cdn_client.url}'>"
+        return f"<LazyPackage prefix='{self._prefix}' from '{self._cdn_client.url}'>"
     
     def __dir__(self) -> list:
-        """Return list of available modules."""
-        return sorted(self._loaded_modules.keys()) 
+        """Return list of loaded modules."""
+        base_attrs = ["reload", "profile", "alias", "dev_mode", "list_packages", "describe", "set_prefix"]
+        return base_attrs + list(self._loaded_modules.keys()) 

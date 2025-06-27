@@ -192,3 +192,93 @@ cython_debug/
 #  refer to https://docs.cursor.com/context/ignore-files
 .cursorignore
 .cursorindexingignore
+
+# PyCDN specific
+# Temporary test files
+test_*.py
+*_test.py
+*_example.py
+secure_client_example.py
+simple_secure_example.py
+
+# Server setup files (may contain sensitive configurations)
+*_setup.py
+cloud_server_setup.py
+
+# API keys and secrets
+*.key
+*.pem
+*.p12
+*.pfx
+api_keys.txt
+secrets.txt
+.secrets
+.keys
+
+# Local development environment files
+.env.local
+.env.development
+.env.staging
+.env.production
+.env.*.local
+
+# Temporary files
+*.tmp
+*.temp
+*.bak
+*.backup
+*.swp
+*.swo
+*~
+
+# IDE and editor files
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+.idea/workspace.xml
+.idea/tasks.xml
+.idea/dictionaries
+.idea/vcs.xml
+.idea/jsLibraryMappings.xml
+.idea/datasources.xml
+.idea/dataSources.ids
+.idea/sqlDataSources.xml
+.idea/dynamic.xml
+
+# OS specific files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Package distribution and upload artifacts
+*.tar.gz
+*.whl
+dist-*
+upload_*
+twine_*
+pypi_*
+
+# Local server configurations
+server_config.json
+local_config.json
+dev_config.json
+
+# Cloud deployment files
+appwrite_config.json
+aws_config.json
+gcp_config.json
+azure_config.json
+
+# Logs and monitoring
+*.log.*
+logs/
+monitoring/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3

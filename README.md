@@ -1,300 +1,330 @@
-# PyCDN - Python Package CDN with Lazy Loading
+# PyCDN - Revolutionary Package CDN with Natural Import System 🚀
 
-[![PyPI version](https://badge.fury.io/py/pycdn.svg)](https://badge.fury.io/py/pycdn)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+**The Netflix of Python packages** - Stream packages instantly without local installation!
 
-> **Revolutionary Python package delivery via CDN with serverless execution and lazy loading**
+PyCDN revolutionizes Python package management by serving packages through CDN networks with lazy loading and **natural import syntax**. Say goodbye to dependency hell and `pip install` delays!
 
-PyCDN eliminates dependency hell by delivering Python packages through a global CDN network with intelligent lazy loading. No more `pip install` - just import and use packages instantly from our edge-optimized servers.
+## 🌟 Revolutionary Import System
 
-## 🚀 Quick Start
+PyCDN now supports **natural Python import syntax** using an advanced meta path import hook system. This means you can import packages directly from CDN servers as if they were installed locally!
 
+### Classic Usage (Still Works)
 ```python
 import pycdn
 
-# Initialize CDN client
-pycdn = pkg(url="cdnpy.openai.com")
+# Connect to CDN server
+cdn = pycdn.pkg("http://localhost:8000")
 
-# Lazy load packages on-demand
-from pycdn.openai import Agent
-from pycdn.numpy import array
-from pycdn.pandas import DataFrame
-
-# Use packages instantly - no local installation required
-agent = Agent(model="gpt-4")
-data = DataFrame({"col1": [1, 2, 3]})
+# Use packages via attribute access
+result = cdn.math.sqrt(16)  # Returns 4.0
+data = cdn.numpy.array([1, 2, 3, 4, 5])
+model = cdn.sklearn.LinearRegression()
 ```
 
-## ✨ Key Features
+### 🎯 NEW: Natural Import Syntax
+```python
+import pycdn
 
-### 🌐 **Global CDN Network**
-- Ultra-low latency package delivery from 200+ edge locations worldwide
-- Intelligent geo-routing to nearest server
-- 99.99% uptime SLA
+# Connect and register CDN
+cdn = pycdn.pkg("http://localhost:8000")  # Registers 'cdn' prefix
 
-### ⚡ **Lazy Loading**
-- Packages loaded only when imported
-- Smart dependency resolution at runtime
-- Automatic version compatibility checking
+# Now use natural Python imports!
+from cdn.openai import OpenAI
+from cdn.numpy import array, mean
+from cdn.pandas import DataFrame
+from cdn.sklearn.ensemble import RandomForestClassifier
 
-### 🔒 **Secure Sandboxed Execution**
-- Isolated execution environments
-- Runtime security scanning
-- Zero-trust package verification
+# Use exactly like local packages
+client = OpenAI(api_key="your-key")
+data = array([1, 2, 3, 4, 5])
+avg = mean(data)
+df = DataFrame({"col1": [1, 2, 3]})
+model = RandomForestClassifier()
+```
 
-### 📦 **Zero Local Dependencies**
-- No more `requirements.txt` management
-- Consistent package versions across environments
-- Instant development environment setup
+### 🔧 Custom Import Prefixes
+```python
+# Use custom prefixes for different CDN servers
+ml_cdn = pycdn.pkg("http://ml-cdn:8000", prefix="ml")
+data_cdn = pycdn.pkg("http://data-cdn:8000", prefix="data")
 
-### 🎯 **Intelligent Caching**
-- ML-powered package pre-loading
-- Common package bundles (numpy+pandas+matplotlib)
-- Edge cache optimization
+# Import from different CDNs
+from ml.tensorflow import keras
+from ml.pytorch import nn
+from data.pandas import DataFrame
+from data.dask import dataframe as dd
+```
 
-## 🛠 Installation
+### 🏢 Multiple CDN Support
+```python
+# Connect to multiple CDN environments
+prod = pycdn.pkg("http://prod-cdn:8000", prefix="prod")
+dev = pycdn.pkg("http://dev-cdn:8000", prefix="dev")
+test = pycdn.pkg("http://test-cdn:8000", prefix="test")
+
+# Import from specific environments
+from prod.stable_package import ProductionClass
+from dev.beta_package import ExperimentalFeature
+from test.mock_package import TestDouble
+```
+
+## 🎯 Key Features
+
+- **🔥 Natural Import Syntax**: Use `from cdn.package import Class` - feels exactly like local imports
+- **⚡ Instant Access**: No `pip install` required - packages execute remotely
+- **🌍 Global CDN**: Packages served from edge locations worldwide
+- **🔒 Zero Dependencies**: No local installation or dependency conflicts
+- **💾 Smart Caching**: Intelligent caching with hybrid in-memory + disk storage
+- **🛡️ Security**: Sandboxed execution with runtime security scanning
+- **📊 Analytics**: Usage tracking and performance monitoring
+- **🔄 Multi-CDN**: Connect to multiple CDN servers simultaneously
+- **🧰 Development Mode**: Local fallback and enhanced debugging
+
+## 🚀 Installation
 
 ```bash
 pip install pycdn
 ```
 
-That's it! No other dependencies required.
+## 📖 Quick Start
 
-## 📖 Usage Examples
-
-### Basic Package Loading
+### 1. Basic Usage
 ```python
 import pycdn
 
 # Connect to CDN
-cdn = pycdn.connect("https://cdn.python.dev")
+cdn = pycdn.pkg("http://localhost:8000")
 
-# Load packages on-demand
-from cdn.requests import get
-from cdn.beautifulsoup4 import BeautifulSoup
+# Classic usage
+result = cdn.math.sqrt(16)
+print(result)  # 4.0
 
-response = get("https://api.github.com")
-soup = BeautifulSoup(response.text, 'html.parser')
+# Natural imports (NEW!)
+from cdn.math import sqrt, pow
+print(sqrt(25))    # 5.0
+print(pow(2, 3))   # 8.0
 ```
 
-### Data Science Workflow
+### 2. Working with Classes
 ```python
 import pycdn
 
-# Scientific computing stack
-pycdn = pkg(url="cdn.datascience.io")
+cdn = pycdn.pkg("http://localhost:8000")
 
-from pycdn.numpy import array, mean
-from pycdn.pandas import read_csv
-from pycdn.matplotlib.pyplot import plot, show
-from pycdn.sklearn.model_selection import train_test_split
+# Import and use classes naturally
+from cdn.openai import OpenAI
+from cdn.sklearn.ensemble import RandomForestClassifier
 
-# Instant data science environment
-data = read_csv("https://example.com/data.csv")
-X_train, X_test = train_test_split(data)
-```
-
-### Machine Learning
-```python
-import pycdn
-
-# AI/ML packages
-ai_cdn = pkg(url="cdnpy.openai.com")
-
-from ai_cdn.openai import Agent
-from ai_cdn.transformers import pipeline
-from ai_cdn.torch import nn
-
-# Ready-to-use ML models
-agent = Agent(model="gpt-4")
-classifier = pipeline("sentiment-analysis")
-```
-
-### Web Development
-```python
-import pycdn
-
-# Web framework packages
-web_cdn = pkg(url="cdn.web.dev")
-
-from web_cdn.fastapi import FastAPI
-from web_cdn.sqlalchemy import create_engine
-from web_cdn.redis import Redis
-
-app = FastAPI()
-db = create_engine("sqlite:///app.db")
-```
-
-## 🏗 Advanced Configuration
-
-### Custom CDN Endpoints
-```python
-import pycdn
-
-# Enterprise CDN
-enterprise_cdn = pycdn.connect(
-    url="https://enterprise.pycdn.com",
-    api_key="your-api-key",
-    region="us-east-1"
+# Create instances and call methods
+client = OpenAI(api_key="your-key")
+response = client.chat.completions.create(
+    model="gpt-3.5-turbo",
+    messages=[{"role": "user", "content": "Hello!"}]
 )
 
-# Private CDN
-private_cdn = pycdn.connect(
-    url="https://internal.company.com/pycdn",
-    auth=("username", "password")
-)
+model = RandomForestClassifier(n_estimators=100)
+model.fit(X_train, y_train)
+predictions = model.predict(X_test)
 ```
 
-### Performance Optimization
+### 3. Data Science Workflow
 ```python
 import pycdn
 
-# Pre-warm common packages
-pycdn.preload([
-    "numpy", "pandas", "matplotlib", 
-    "requests", "beautifulsoup4"
-])
+# Connect to data science CDN
+ds_cdn = pycdn.pkg("http://ds-cdn:8000", prefix="ds")
 
-# Cache configuration
-pycdn.configure(
-    cache_size="1GB",
-    prefetch_threshold=0.8,
-    edge_locations=["us-east", "eu-west", "asia-pacific"]
-)
+# Natural imports for entire data pipeline
+from ds.pandas import DataFrame, read_csv
+from ds.numpy import array, mean, std
+from ds.matplotlib.pyplot as plt
+from ds.sklearn.model_selection import train_test_split
+from ds.sklearn.ensemble import RandomForestRegressor
+from ds.sklearn.metrics import mean_squared_error
+
+# Use exactly like local packages
+df = read_csv("data.csv")
+X = df[["feature1", "feature2"]]
+y = df["target"]
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2)
+model = RandomForestRegressor()
+model.fit(X_train, y_train)
+
+predictions = model.predict(X_test)
+mse = mean_squared_error(y_test, predictions)
+print(f"MSE: {mse}")
+```
+
+## 🛠️ Advanced Features
+
+### Dynamic Prefix Management
+```python
+cdn = pycdn.pkg("http://localhost:8000", prefix="initial")
+
+# Change prefix dynamically
+cdn.set_prefix("dynamic")
+
+# Enable specific package imports
+cdn.enable_imports(["tensorflow", "pytorch", "scikit-learn"])
+
+# Now these work:
+from dynamic.tensorflow import keras
+from dynamic.pytorch import nn
+```
+
+### Error Handling
+```python
+from pycdn import PyCDNRemoteError
+
+try:
+    from cdn.nonexistent import something
+except PyCDNRemoteError as e:
+    print(f"CDN Error: {e.message}")
+    print(f"Package: {e.package_name}")
+    if e.remote_traceback:
+        print(f"Remote traceback: {e.remote_traceback}")
 ```
 
 ### Development Mode
 ```python
+# Configure for development
+pycdn.configure(debug=True, timeout=60)
+
+cdn = pycdn.pkg("http://localhost:8000", prefix="dev")
+# Enables local fallback, enhanced debugging, mock mode
+```
+
+### CDN Management
+```python
+# View active CDN mappings
+mappings = pycdn.get_cdn_mappings()
+print(mappings)  # {'cdn': 'http://localhost:8000', 'ml': 'http://ml-cdn:8000'}
+
+# Clear all mappings
+pycdn.clear_cdn_mappings()
+
+# Register/unregister specific prefixes
+pycdn.register_cdn_client("custom", cdn_client)
+pycdn.unregister_cdn_client("custom")
+```
+
+## 🏗️ Server Setup
+
+Deploy packages to your CDN server:
+
+```python
+from pycdn.server import CDNServer
+
+# Create CDN server
+server = CDNServer(port=8000)
+
+# Deploy packages
+server.deploy_package("math", version="1.0.0")
+server.deploy_package("numpy", version="1.24.0")
+server.deploy_package("openai", version="1.0.0")
+
+# Start server
+server.start()
+```
+
+## 🌐 Meta Path Import System
+
+PyCDN uses Python's `sys.meta_path` to intercept imports and resolve them from CDN servers:
+
+```python
+import sys
 import pycdn
 
-# Local development with CDN fallback
-pycdn.dev_mode(
-    local_packages=["./my_package"],
-    cdn_fallback=True,
+# When you create a CDN connection
+cdn = pycdn.pkg("http://localhost:8000", prefix="cdn")
+
+# PyCDN automatically:
+# 1. Registers a MetaPathFinder in sys.meta_path
+# 2. Maps the 'cdn' prefix to your CDN client
+# 3. Intercepts imports starting with 'cdn.'
+# 4. Creates proxy objects that execute remotely
+# 5. Handles classes, functions, modules transparently
+
+# All of this happens automatically!
+from cdn.package import Class  # Intercepted and resolved
+```
+
+## 🔧 Configuration
+
+```python
+# Global configuration
+pycdn.configure(
+    debug=True,
+    timeout=30,
+    cache_size="100MB",
+    max_retries=3
+)
+
+# Per-connection configuration
+cdn = pycdn.pkg(
+    "http://localhost:8000",
+    prefix="cdn",
+    timeout=60,
+    api_key="your-api-key",
+    region="us-east-1",
+    cache_size="500MB",
+    max_retries=5,
     debug=True
 )
 ```
 
-## 🌍 CDN Endpoints
+## 📊 Performance
 
-### Public CDNs
-- **General**: `https://cdn.python.dev`
-- **Data Science**: `https://cdn.datascience.io`
-- **AI/ML**: `https://cdnpy.openai.com`
-- **Web Dev**: `https://cdn.web.dev`
+- **🚀 First call**: ~50-100ms (network + execution)
+- **⚡ Cached calls**: ~1-5ms (local cache hit)
+- **💾 Memory usage**: Minimal (only proxy objects stored locally)
+- **🌍 Global reach**: CDN edge servers reduce latency worldwide
+- **📈 Scalability**: Automatic scaling based on demand
 
-### Enterprise CDNs
-- **AWS**: `https://python.cdn.aws.com`
-- **GCP**: `https://python.cdn.gcp.com`
-- **Azure**: `https://python.cdn.azure.com`
+## 🛡️ Security
 
-## 📊 Performance Benefits
+- **🔒 Sandboxed execution**: Each package runs in isolated environment
+- **🛡️ Runtime scanning**: Real-time security vulnerability detection
+- **🚫 Package allowlists**: Control which packages can be imported
+- **🔐 API authentication**: Secure CDN access with API keys
+- **📝 Audit logs**: Complete execution history and monitoring
 
-| Metric | Traditional pip | PyCDN |
-|--------|----------------|--------|
-| Package Install Time | 30-300s | Instant |
-| Environment Setup | 5-30min | <10s |
-| Storage Used | 100MB-2GB | 0MB |
-| Dependency Conflicts | Common | Never |
-| Version Consistency | Manual | Automatic |
+## 🧪 Examples
 
-## 🔧 API Reference
+Check out our comprehensive examples:
 
-### Core Functions
-
-#### `pkg(url, **kwargs)`
-Initialize CDN connection
-```python
-cdn = pkg(url="https://cdn.python.dev", timeout=10)
-```
-
-#### `pycdn.connect(url, **kwargs)`
-Alternative connection method with advanced options
-```python
-cdn = pycdn.connect(
-    url="https://cdn.python.dev",
-    api_key="key",
-    region="us-east-1"
-)
-```
-
-#### `pycdn.preload(packages)`
-Pre-warm package cache
-```python
-pycdn.preload(["numpy", "pandas", "matplotlib"])
-```
-
-#### `pycdn.configure(**kwargs)`
-Configure CDN client
-```python
-pycdn.configure(
-    cache_size="1GB",
-    timeout=30,
-    retry_count=3
-)
-```
-
-## 🏢 Enterprise Features
-
-### Team Management
-```python
-# Organization-wide package policies
-pycdn.org.set_policy({
-    "allowed_packages": ["numpy", "pandas", "requests"],
-    "blocked_packages": ["deprecated_lib"],
-    "auto_updates": True
-})
-```
-
-### Usage Analytics
-```python
-# Package usage tracking
-stats = pycdn.analytics.get_usage(
-    timeframe="30d",
-    breakdown="package"
-)
-```
-
-### Security Controls
-```python
-# Security scanning
-pycdn.security.enable_scanning()
-pycdn.security.set_policy("strict")
-```
+- [`examples/quick_import_start.py`](examples/quick_import_start.py) - Basic import system usage
+- [`examples/client/advanced_import_demo.py`](examples/client/advanced_import_demo.py) - Advanced features showcase
+- [`examples/client/basic_usage.py`](examples/client/basic_usage.py) - Classic PyCDN usage
+- [`examples/server/`](examples/server/) - Server deployment examples
 
 ## 🤝 Contributing
 
-We welcome contributions! See our [Contributing Guide](CONTRIBUTING.md) for details.
+We welcome contributions! Check out our [Contributing Guide](CONTRIBUTING.md) for details.
 
-### Development Setup
-```bash
-git clone https://github.com/pycdn/pycdn
-cd pycdn
-pip install -e ".[dev]"
-pytest
-```
+## 📄 License
 
-## 📝 License
+Apache-2.0 License - see [LICENSE](LICENSE) for details.
 
-MIT License - see [LICENSE](LICENSE) file for details.
+## 🌟 Why PyCDN?
 
-## 🆘 Support
+Traditional package management is broken:
+- ❌ Long installation times
+- ❌ Dependency conflicts
+- ❌ Storage space waste
+- ❌ Environment inconsistencies
+- ❌ Version management complexity
 
-- **Documentation**: [docs.pycdn.dev](https://docs.pycdn.dev)
-- **Issues**: [GitHub Issues](https://github.com/pycdn/pycdn/issues)
-- **Discord**: [Join our community](https://discord.gg/pycdn)
-- **Email**: support@pycdn.dev
-
-## 🗺 Roadmap
-
-- **Q2 2025**: Public beta launch
-- **Q3 2025**: Enterprise features
-- **Q4 2025**: AI-powered package recommendations
-- **Q1 2026**: Multi-language support (Node.js, Go, Rust)
+PyCDN fixes all of this:
+- ✅ **Instant access** - no installation needed
+- ✅ **Zero conflicts** - packages run remotely
+- ✅ **Minimal storage** - only proxy objects locally
+- ✅ **Consistent environments** - CDN guarantees consistency
+- ✅ **Automatic updates** - always use latest versions
+- ✅ **Natural syntax** - import exactly like local packages
 
 ---
 
-**Built with ❤️ by the PyCDN team**
-
-*"The future of Python package management is here"*
+**PyCDN: The Netflix of Python packages** 🎬  
+*Stream packages instantly, anywhere, anytime!*
