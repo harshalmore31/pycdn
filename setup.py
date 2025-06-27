@@ -15,7 +15,7 @@ def read_requirements(filename):
 
 setup(
     name="pycdn",
-    version="1.0.1",
+    version="1.0.4",
     author="Harshal More",
     author_email="harshalmore2468@gmail.com",
     description="Revolutionary Python package delivery via CDN with serverless execution and lazy loading",

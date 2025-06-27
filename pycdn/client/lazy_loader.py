@@ -79,6 +79,28 @@ class LazyFunction:
     
     def __str__(self) -> str:
         return self.__repr__()
+    
+    def __getattr__(self, name: str) -> "LazyAttribute":
+        """
+        Support chained attribute access for function results.
+        
+        Args:
+            name: Attribute name
+            
+        Returns:
+            LazyAttribute for chained access
+        """
+        if name.startswith('_'):
+            raise AttributeError(f"'{self._full_name}' object has no attribute '{name}'")
+        
+        # Create a lazy attribute for chained access
+        attribute_path = f"{self._function_name}.{name}"
+        return LazyAttribute(
+            self._cdn_client,
+            self._package_name,
+            attribute_path,
+            None  # No instance for module-level functions
+        )
 
 
 class LazyClass:
@@ -174,12 +196,9 @@ class LazyInstance:
     def _initialize_remote_instance(self) -> None:
         """Initialize the remote instance."""
         try:
-            # Call constructor on remote side
-            constructor_name = f"{self._class_name}.__init__"
-            serialized_args = serialize_args(self, *self._init_args, **self._init_kwargs)
-            
-            # For MVP, we skip actual instance creation and delegate to method calls
-            log_debug(f"Lazy instance of {self._class_name} created")
+            # For MVP, we skip actual remote instance creation and delegate to method calls
+            # The instance will be created on the server side when methods are called
+            log_debug(f"Lazy instance of {self._class_name} created with args: {len(self._init_args)} args, {len(self._init_kwargs)} kwargs")
             
         except Exception as e:
             log_debug(f"Failed to initialize remote instance: {e}")
@@ -198,12 +217,11 @@ class LazyInstance:
         if name.startswith('_'):
             raise AttributeError(f"'{self._class_name}' object has no attribute '{name}'")
         
-        # Return lazy method wrapper
-        method_name = f"{self._class_name}.{name}"
-        return LazyMethod(
+        # Return lazy attribute wrapper that supports chained access
+        return LazyAttribute(
             self._cdn_client,
             self._package_name,
-            method_name,
+            name,
             self
         )
     
@@ -211,9 +229,116 @@ class LazyInstance:
         return f"<LazyInstance of '{self._class_name}' from '{self._cdn_client.url}'>"
 
 
-class LazyMethod:
+class LazyAttribute:
     """
-    Lazy wrapper for remote instance methods.
+    Lazy wrapper for remote attributes that supports chained access.
+    Can be both callable (method) and have attributes (nested objects).
+    """
+    
+    def __init__(
+        self,
+        cdn_client: "CDNClient",
+        package_name: str,
+        attribute_path: str,
+        instance: LazyInstance = None
+    ):
+        """
+        Initialize lazy attribute.
+        
+        Args:
+            cdn_client: CDN client instance
+            package_name: Name of the package
+            attribute_path: Full path to the attribute (e.g., "chat.completions.create")
+            instance: Parent lazy instance (if this is an instance attribute)
+        """
+        self._cdn_client = cdn_client
+        self._package_name = package_name
+        self._attribute_path = attribute_path
+        self._instance = instance
+    
+    def __call__(self, *args, **kwargs) -> Any:
+        """
+        Execute the remote method/callable.
+        
+        Args:
+            *args: Method arguments
+            **kwargs: Method keyword arguments
+            
+        Returns:
+            Method execution result
+        """
+        log_debug(f"Executing lazy attribute {self._attribute_path}")
+        
+        try:
+            if self._instance:
+                # Instance method call
+                request_data = {
+                    "instance_info": {
+                        "class_name": self._instance._class_name,
+                        "init_args": self._instance._init_args,
+                        "init_kwargs": self._instance._init_kwargs
+                    },
+                    "method_args": args,
+                    "method_kwargs": kwargs
+                }
+                method_name = f"{self._instance._class_name}.{self._attribute_path}"
+            else:
+                # Module function call
+                request_data = {
+                    "method_args": args,
+                    "method_kwargs": kwargs
+                }
+                method_name = self._attribute_path
+            
+            # Serialize the request data
+            serialized_args = serialize_args(request_data)
+            
+            # Execute remote method
+            response = self._cdn_client._execute_request(
+                self._package_name,
+                method_name,
+                serialized_args
+            )
+            
+            return deserialize_result(response)
+            
+        except Exception as e:
+            log_debug(f"Lazy attribute execution failed: {e}")
+            raise e
+    
+    def __getattr__(self, name: str) -> "LazyAttribute":
+        """
+        Support chained attribute access.
+        
+        Args:
+            name: Next attribute name in the chain
+            
+        Returns:
+            New LazyAttribute for the chained access
+        """
+        if name.startswith('_'):
+            raise AttributeError(f"'{self._attribute_path}' object has no attribute '{name}'")
+        
+        # Create new attribute path
+        new_path = f"{self._attribute_path}.{name}"
+        
+        return LazyAttribute(
+            self._cdn_client,
+            self._package_name,
+            new_path,
+            self._instance
+        )
+    
+    def __repr__(self) -> str:
+        if self._instance:
+            return f"<LazyAttribute '{self._attribute_path}' of {self._instance._class_name} from '{self._cdn_client.url}'>"
+        else:
+            return f"<LazyAttribute '{self._attribute_path}' from '{self._cdn_client.url}'>"
+
+
+class LazyMethod(LazyAttribute):
+    """
+    Legacy LazyMethod class - now inherits from LazyAttribute for backward compatibility.
     """
     
     def __init__(
@@ -224,7 +349,7 @@ class LazyMethod:
         instance: LazyInstance
     ):
         """
-        Initialize lazy method.
+        Initialize lazy method (backward compatibility).
         
         Args:
             cdn_client: CDN client instance
@@ -232,41 +357,7 @@ class LazyMethod:
             method_name: Name of the method
             instance: Parent lazy instance
         """
-        self._cdn_client = cdn_client
-        self._package_name = package_name
-        self._method_name = method_name
-        self._instance = instance
-    
-    def __call__(self, *args, **kwargs) -> Any:
-        """
-        Execute the remote method.
-        
-        Args:
-            *args: Method arguments
-            **kwargs: Method keyword arguments
-            
-        Returns:
-            Method execution result
-        """
-        log_debug(f"Executing lazy method {self._method_name}")
-        
-        try:
-            # Include instance in arguments
-            full_args = (self._instance,) + args
-            serialized_args = serialize_args(*full_args, **kwargs)
-            
-            # Execute remote method
-            response = self._cdn_client._execute_request(
-                self._package_name,
-                self._method_name,
-                serialized_args
-            )
-            
-            return deserialize_result(response)
-            
-        except Exception as e:
-            log_debug(f"Lazy method execution failed: {e}")
-            raise e
+        super().__init__(cdn_client, package_name, method_name, instance)
 
 
 class LazyModule(ModuleType):

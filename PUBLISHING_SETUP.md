@@ -29,13 +29,13 @@ git add .
 git commit -m "Release v1.0.1 with new examples structure"
 
 # 2. Create and push a version tag
-git tag v1.0.1
+git tag v1.0.3
 git push origin main --tags
 
 # 3. Create a GitHub Release
 # Go to GitHub → Releases → "Create a new release"
-# - Tag: v1.0.1
-# - Title: "PyCDN v1.0.1 - Enhanced Examples & Documentation"
+# - Tag: v1.0.3
+# - Title: "PyCDN v1.0.3 - Fixed Chained Attribute Access"
 # - Description: Your release notes
 # - Click "Publish release"
 
@@ -73,22 +73,22 @@ pip install pycdn==1.0.1
 
 ### Complete Release Process
 ```bash
-# 1. Update version numbers (already done for v1.0.1)
+# 1. Update version numbers (already done for v1.0.3)
 # 2. Build and test locally
 python -m build
 python -m twine check dist/*
 
 # 3. Commit and tag
 git add .
-git commit -m "Release v1.0.1"
-git tag v1.0.1
+git commit -m "Release v1.0.3 - Fixed chained attribute access bug"
+git tag v1.0.3
 git push origin main --tags
 
 # 4. Create GitHub Release
 # This triggers automated publishing via GitHub Actions
 
 # 5. Verify installation
-pip install pycdn==1.0.1
+pip install pycdn==1.0.3
 python -c "import pycdn; print(f'✅ PyCDN {pycdn.__version__} installed')"
 ```
 
@@ -107,7 +107,7 @@ python -c "import pycdn; print(f'✅ PyCDN {pycdn.__version__} installed')"
 
 ## 📊 **Current Package Status**
 
-### Version 1.0.1 Features
+### Version 1.0.3 Features
 ✅ **Core Features:**
 - CDN-based package execution
 - Lazy loading with import hooks
@@ -146,7 +146,7 @@ pycdn-1.0.1/
 
 ## 🎉 **Ready to Publish!**
 
-Your PyCDN v1.0.1 is ready for release with:
+Your PyCDN v1.0.3 is ready for release with:
 - ✅ Updated version numbers
 - ✅ GitHub Actions workflows 
 - ✅ Built and validated packages

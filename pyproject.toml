@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pycdn"
-version = "1.0.1"
+version = "1.0.4"
 description = "Revolutionary Python package delivery via CDN with serverless execution and lazy loading"
 authors = [
     {name = "Harshal More", email = "harshalmore2468@gmail.com"}

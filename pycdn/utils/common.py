@@ -50,10 +50,35 @@ def serialize_args(*args, **kwargs) -> Dict[str, str]:
     Returns:
         Dict containing serialized arguments
     """
+    def _process_arg(arg):
+        """Process individual argument, handling LazyInstance objects."""
+        # Import here to avoid circular imports
+        from pycdn.client.lazy_loader import LazyInstance
+        
+        if isinstance(arg, LazyInstance):
+            # Convert LazyInstance to a serializable representation
+            return {
+                "_lazy_instance": True,
+                "package_name": arg._package_name,
+                "class_name": arg._class_name,
+                "init_args": [_process_arg(a) for a in arg._init_args],
+                "init_kwargs": {k: _process_arg(v) for k, v in arg._init_kwargs.items()}
+            }
+        elif isinstance(arg, (list, tuple)):
+            return type(arg)([_process_arg(item) for item in arg])
+        elif isinstance(arg, dict):
+            return {k: _process_arg(v) for k, v in arg.items()}
+        else:
+            return arg
+    
     try:
+        # Process arguments to handle LazyInstance objects
+        processed_args = tuple(_process_arg(arg) for arg in args)
+        processed_kwargs = {k: _process_arg(v) for k, v in kwargs.items()}
+        
         # Use cloudpickle for better serialization of complex objects
-        serialized_args = base64.b64encode(cloudpickle.dumps(args)).decode('utf-8')
-        serialized_kwargs = base64.b64encode(cloudpickle.dumps(kwargs)).decode('utf-8')
+        serialized_args = base64.b64encode(cloudpickle.dumps(processed_args)).decode('utf-8')
+        serialized_kwargs = base64.b64encode(cloudpickle.dumps(processed_kwargs)).decode('utf-8')
         
         return {
             "args": serialized_args,
@@ -65,9 +90,13 @@ def serialize_args(*args, **kwargs) -> Dict[str, str]:
         
         # Fallback to JSON for simple types
         try:
+            # Process arguments again for JSON compatibility
+            processed_args = tuple(_process_arg(arg) for arg in args)
+            processed_kwargs = {k: _process_arg(v) for k, v in kwargs.items()}
+            
             return {
-                "args": json.dumps(args),
-                "kwargs": json.dumps(kwargs),
+                "args": json.dumps(processed_args),
+                "kwargs": json.dumps(processed_kwargs),
                 "serialization_method": "json"
             }
         except Exception as json_e:
@@ -83,6 +112,24 @@ def deserialize_args(serialized_data: Dict[str, str]) -> tuple:
     Returns:
         Tuple of (args, kwargs)
     """
+    def _reconstruct_arg(arg):
+        """Reconstruct argument, handling LazyInstance representations."""
+        if isinstance(arg, dict) and arg.get("_lazy_instance"):
+            # Reconstruct LazyInstance reference
+            return {
+                "_lazy_instance_ref": True,
+                "package_name": arg["package_name"],
+                "class_name": arg["class_name"],
+                "init_args": [_reconstruct_arg(a) for a in arg["init_args"]],
+                "init_kwargs": {k: _reconstruct_arg(v) for k, v in arg["init_kwargs"].items()}
+            }
+        elif isinstance(arg, (list, tuple)):
+            return type(arg)([_reconstruct_arg(item) for item in arg])
+        elif isinstance(arg, dict):
+            return {k: _reconstruct_arg(v) for k, v in arg.items()}
+        else:
+            return arg
+    
     method = serialized_data.get("serialization_method", "json")
     
     try:
@@ -92,6 +139,10 @@ def deserialize_args(serialized_data: Dict[str, str]) -> tuple:
         else:
             args = json.loads(serialized_data["args"])
             kwargs = json.loads(serialized_data["kwargs"])
+        
+        # Reconstruct LazyInstance references
+        args = tuple(_reconstruct_arg(arg) for arg in args)
+        kwargs = {k: _reconstruct_arg(v) for k, v in kwargs.items()}
             
         return args, kwargs
     except Exception as e:

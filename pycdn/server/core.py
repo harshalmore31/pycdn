@@ -34,7 +34,7 @@ class ExecuteRequest(BaseModel):
 
 class ExecuteResponse(BaseModel):
     """Response model for function execution."""
-    result: str
+    result: Optional[str] = None
     success: bool
     serialization_method: str
     error: Optional[str] = None
