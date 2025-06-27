@@ -143,7 +143,12 @@ class HybridCDNProxy:
             
             # Create appropriate proxy based on type
             if symbol_type == "module":
-                return HybridCDNProxy(self._cdn_client, full_path, self)
+                sub_proxy = HybridCDNProxy(self._cdn_client, full_path, self)
+                # Register the sub-module in sys.modules for natural imports
+                module_name = f"cdn.{full_path}" if not full_path.startswith("cdn") else full_path
+                sys.modules[module_name] = sub_proxy
+                log_debug(f"Registered sub-module {module_name} in sys.modules")
+                return sub_proxy
             elif symbol_type == "class":
                 return CDNClassProxy(self._cdn_client, package_name, symbol_name, full_path)
             elif symbol_type == "function":
@@ -152,8 +157,32 @@ class HybridCDNProxy:
                 return CDNCallableProxy(self._cdn_client, package_name, symbol_name, full_path)
                 
         except Exception as e:
-            # If direct resolution fails, try creating a sub-module proxy
-            return HybridCDNProxy(self._cdn_client, full_path, self)
+            # If direct resolution fails, try heuristic-based resolution
+            log_debug(f"Server resolution failed for {symbol_name}, using heuristics: {e}")
+            
+            # For root-level package names (like 'openai', 'numpy'), create sub-modules
+            # For nested symbols (like 'OpenAI', 'sqrt'), use type heuristics
+            if self._module_path == "cdn" or self._module_path == "":
+                # This is a top-level package access (e.g., cdn.openai)
+                sub_proxy = HybridCDNProxy(self._cdn_client, full_path, self)
+                # Register the sub-module in sys.modules for natural imports
+                module_name = f"cdn.{full_path}" if not full_path.startswith("cdn") else full_path
+                sys.modules[module_name] = sub_proxy
+                log_debug(f"Registered top-level package {module_name} in sys.modules")
+                return sub_proxy
+            else:
+                # This is accessing a symbol within a package (e.g., openai.OpenAI)
+                if symbol_name[0].isupper():
+                    # Likely a class (e.g., OpenAI, Client, API)
+                    log_debug(f"Creating CDNClassProxy for {symbol_name} (uppercase heuristic)")
+                    return CDNClassProxy(self._cdn_client, package_name, symbol_name, full_path)
+                elif symbol_name.islower() and not symbol_name.startswith('_'):
+                    # Likely a function
+                    log_debug(f"Creating CDNFunctionProxy for {symbol_name} (lowercase heuristic)")
+                    return CDNFunctionProxy(self._cdn_client, package_name, symbol_name, full_path)
+                else:
+                    # Create a callable proxy as fallback
+                    return CDNCallableProxy(self._cdn_client, package_name, symbol_name, full_path)
     
     def _log_access(self, name: str, action: str, duration: float = 0, error: str = None):
         """Log access for profiling and debugging."""
@@ -419,9 +448,11 @@ class CDNInstanceProxy:
     def _create_instance(self):
         """Create the instance on the remote server."""
         try:
+            # Instead of calling __init__ directly, we should call the class constructor
+            # The server should handle class instantiation properly
             response = self._cdn_client.call_function(
                 self._package_name,
-                f"{self._class_name}.__init__",
+                self._class_name,  # Call the class constructor, not __init__
                 self._init_args,
                 self._init_kwargs
             )
@@ -441,13 +472,14 @@ class CDNInstanceProxy:
         if name in self._method_cache:
             return self._method_cache[name]
         
-        # Create method proxy
+        # Create method proxy with reference to this instance
         method_proxy = CDNMethodProxy(
             self._cdn_client,
             self._package_name,
             self._class_name,
             name,
-            self._instance_id
+            self._instance_id,
+            instance_proxy=self  # Pass the instance proxy
         )
         
         # Cache it
@@ -459,26 +491,58 @@ class CDNInstanceProxy:
 
 
 class CDNMethodProxy:
-    """Enhanced proxy for remote instance methods."""
+    """Enhanced proxy for remote instance methods with chained attribute support."""
     
     def __init__(self, cdn_client, package_name: str, class_name: str, 
-                 method_name: str, instance_id: str):
+                 method_name: str, instance_id: str, instance_proxy=None):
         self._cdn_client = cdn_client
         self._package_name = package_name
         self._class_name = class_name
         self._method_name = method_name
         self._instance_id = instance_id
         self._call_count = 0
+        self._instance_proxy = instance_proxy
     
     def __call__(self, *args, **kwargs):
-        """Execute the remote method."""
+        """Execute the remote method using instance call mechanism."""
         self._call_count += 1
+        
+        # Use the server's special __instance_call__ mechanism for instance methods
+        # Get init args/kwargs from the instance proxy
+        init_args = self._instance_proxy._init_args if self._instance_proxy else []
+        init_kwargs = self._instance_proxy._init_kwargs if self._instance_proxy else {}
+        
+        # Create call data for instance method execution
+        call_data = {
+            "class_name": self._class_name,
+            "init_args": list(init_args),
+            "init_kwargs": init_kwargs,
+            "method_path": self._method_name,
+            "method_args": list(args),
+            "method_kwargs": kwargs
+        }
+        
         return self._cdn_client.call_function(
             self._package_name,
-            f"{self._class_name}.{self._method_name}",
-            args,
-            kwargs,
-            instance_id=self._instance_id
+            "__instance_call__",
+            (call_data,),
+            {}
+        )
+    
+    def __getattr__(self, name: str):
+        """Support chained attribute access like client.chat.completions.create()."""
+        if name.startswith('_'):
+            raise AttributeError(f"'{self.__class__.__name__}' has no attribute '{name}'")
+        
+        # Create a new method proxy for the chained attribute
+        chained_method_name = f"{self._method_name}.{name}"
+        return CDNMethodProxy(
+            self._cdn_client,
+            self._package_name,
+            self._class_name,
+            chained_method_name,
+            self._instance_id,
+            instance_proxy=self._instance_proxy
         )
     
     def __repr__(self):
@@ -486,7 +550,7 @@ class CDNMethodProxy:
 
 
 class CDNCallableProxy:
-    """Enhanced proxy for generic CDN callables."""
+    """Enhanced proxy for generic CDN callables with chained attribute support."""
     
     def __init__(self, cdn_client, package_name: str, callable_name: str, full_path: str):
         self._cdn_client = cdn_client
@@ -503,6 +567,21 @@ class CDNCallableProxy:
             self._callable_name,
             args,
             kwargs
+        )
+    
+    def __getattr__(self, name: str):
+        """Support chained attribute access for nested callables."""
+        if name.startswith('_'):
+            raise AttributeError(f"'{self.__class__.__name__}' has no attribute '{name}'")
+        
+        # Create a new callable proxy for the chained attribute
+        chained_callable_name = f"{self._callable_name}.{name}"
+        chained_full_path = f"{self._full_path}.{name}"
+        return CDNCallableProxy(
+            self._cdn_client,
+            self._package_name,
+            chained_callable_name,
+            chained_full_path
         )
     
     def __repr__(self):
@@ -582,7 +661,7 @@ class HybridModuleLoader(importlib.abc.Loader):
             module.__package__ = 'cdn'
             
         else:
-            # For 'from cdn.package import Symbol', get the package proxy
+            # For 'from cdn.package import Symbol', get the package proxy and resolve all symbols
             package_path = self._module_name[4:]  # Remove 'cdn.' prefix
             
             try:
@@ -591,11 +670,25 @@ class HybridModuleLoader(importlib.abc.Loader):
                 for part in package_path.split('.'):
                     package_proxy = getattr(package_proxy, part)
                 
-                # Copy attributes from package proxy to module
-                for attr_name in dir(package_proxy):
+                # Get all attributes from the package proxy
+                # This ensures 'from cdn.openai import OpenAI' gets the actual OpenAI class
+                package_dir = dir(package_proxy)
+                for attr_name in package_dir:
                     if not attr_name.startswith('_'):
                         try:
-                            setattr(module, attr_name, getattr(package_proxy, attr_name))
+                            # Resolve each attribute to get the actual symbol (class/function/etc)
+                            attr_value = getattr(package_proxy, attr_name)
+                            setattr(module, attr_name, attr_value)
+                        except AttributeError:
+                            pass
+                
+                # Also add common symbols that might not be in dir()
+                common_symbols = ['OpenAI', 'Client', 'API', '__version__', '__all__']
+                for symbol in common_symbols:
+                    if not hasattr(module, symbol):
+                        try:
+                            symbol_value = getattr(package_proxy, symbol)
+                            setattr(module, symbol, symbol_value)
                         except AttributeError:
                             pass
                             

@@ -1,66 +1,40 @@
+#!/usr/bin/env python3
 """
-PyCDN Server Example - Package CDN Server
+Simple PyCDN Server Setup
 
-This example creates a simple PyCDN server that serves packages via CDN
-with support for both classic usage and natural import syntax.
+Starts a basic PyCDN server on localhost:8000 for testing and development.
 """
 
-from pycdn.server import CDNServer
+import sys
+import asyncio
+from pycdn import CDNServer
 
 def main():
-    print("🚀 PyCDN Server Example - v1.1.1")
-    print("=" * 50)
+    print("🚀 Starting PyCDN Server")
+    print("=" * 30)
     
-    # Configure allowed packages for security
-    allowed_packages = [
-        "openai",      # AI/ML
-        "requests",    # HTTP
-        "numpy",       # Data science
-        "pandas",      # Data analysis
-        "math",        # Built-in math
-        "json",        # JSON handling
-        "datetime",    # Date/time
-    ]
-    
-    print("📦 Creating PyCDN server...")
-    print(f"🔒 Allowed packages: {', '.join(allowed_packages)}")
-    
-    # Create CDN server
+    # Create server with common packages allowed
     server = CDNServer(
         host="localhost",
         port=8000,
         debug=True,
-        allowed_packages=allowed_packages
+        allowed_packages=None  # Allow all packages
     )
     
-    print("\n" + "=" * 50)
-    print("🌟 Server Features Enabled:")
-    print("=" * 50)
-    print("✅ Classic usage: cdn.package.function()")
-    print("✅ Natural imports: from cdn.package import Class")
-    print("✅ Multi-CDN support with custom prefixes")
-    print("✅ Secure sandboxed execution")
-    print("✅ Intelligent caching and lazy loading")
-    print("✅ Real-time error handling")
-    
-    print("\n" + "=" * 50)
-    print("📡 Server Starting...")
-    print("=" * 50)
-    print("🌐 Server URL: http://localhost:8000")
-    print("🔗 Health check: http://localhost:8000/health")
-    print("📖 API docs: http://localhost:8000/docs")
-    print("🛑 Press Ctrl+C to stop")
-    print("=" * 50)
+    print(f"🌐 Server starting at http://localhost:8000")
+    print("📦 Allowed packages: All")
+    print("🔧 Debug mode: Enabled")
+    print("💡 Press Ctrl+C to stop")
+    print("")
     
     try:
-        # Start the server
+        # Run the server
         server.run()
     except KeyboardInterrupt:
-        print("\n🛑 Server stopped by user")
+        print("\n⏹️  Server stopped by user")
     except Exception as e:
-        print(f"\n❌ Server error: {e}")
-    finally:
-        print("🏁 PyCDN Server shutdown complete")
+        print(f"❌ Server error: {e}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main() 

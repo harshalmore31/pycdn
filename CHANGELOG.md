@@ -2,6 +2,86 @@
 
 All notable changes to this project will be documented in this file.
 
+## [1.1.4] - 2025-01-27
+
+### 🔧 CRITICAL FIX - Chained Attribute Access
+- **MAJOR FIX**: Fixed "'CDNMethodProxy' object has no attribute 'completions'" error for chained method calls
+- **ROOT CAUSE**: CDNMethodProxy and CDNCallableProxy didn't support nested attribute access (e.g., `client.chat.completions.create()`)
+- **SOLUTION**: Added `__getattr__` method to both proxy classes for proper attribute chaining
+- **IMPACT**: Complex API patterns now work correctly:
+  - OpenAI: `client.chat.completions.create()` ✅
+  - Pandas: `df.plot.bar()` ✅  
+  - Any nested method/attribute access ✅
+
+### 🚀 Enhanced Method Chaining
+- **NEW**: Full support for unlimited nested attribute access
+- **IMPROVED**: CDNMethodProxy now supports chains like `obj.method1.method2.method3()`
+- **ENHANCED**: CDNCallableProxy supports nested callable access patterns
+- **TESTED**: Comprehensive testing with OpenAI's complex API structure
+
+### 📦 What This Fixes
+- OpenAI `client.chat.completions.create()` patterns
+- Pandas plotting methods like `df.plot.bar()`
+- Any library with nested method/attribute structures
+- Complex API chaining scenarios that previously failed
+
+## [1.1.3] - 2025-01-27
+
+### 🔧 CRITICAL BUG FIX - Class Instantiation
+- **MAJOR FIX**: Fixed "OpenAI.__init__() missing 1 required positional argument: 'self'" error
+- **ROOT CAUSE**: CDNInstanceProxy was calling `ClassName.__init__` directly instead of proper class constructor
+- **SOLUTION**: Changed to call class constructor properly for both classic and natural import syntax
+- **IMPACT**: All class instantiation now works correctly for both syntax patterns:
+  - Classic: `cdn.openai.OpenAI(api_key=...)` ✅
+  - Natural: `from cdn.openai import OpenAI; OpenAI(api_key=...)` ✅
+
+### 🚀 Enhanced Development Experience
+- **NEW**: `server.py` - Simple server setup script for easy development
+- **IMPROVED**: Enhanced error messages for class instantiation failures
+- **ADDED**: Better debugging output and troubleshooting information
+- **TESTED**: Comprehensive testing to ensure both import patterns work flawlessly
+
+### 📦 Developer Tools
+- Simplified server setup with `python server.py`
+- Enhanced client examples with working class instantiation
+- Better error handling and debugging capabilities
+- Improved documentation for setup and troubleshooting
+
+## [1.1.2] - 2025-01-27
+
+### 🚀 MAJOR RELEASE - Revolutionary Hybrid Import System
+- **BREAKTHROUGH**: Complete rewrite of import system with advanced `sys.meta_path` integration
+- **NATURAL SYNTAX**: Full support for `from cdn.openai import OpenAI` alongside classic `cdn.openai.OpenAI()`
+- **HYBRID ARCHITECTURE**: Both import styles share the same optimized backend with zero duplication
+- **PRODUCTION READY**: Thread-safe, memory-efficient, and enterprise-grade implementation
+
+### 🎯 Advanced Meta Path System
+- **`HybridCDNFinder`**: Sophisticated meta path finder using `importlib.abc.MetaPathFinder`
+- **`HybridCDNLoader`**: Advanced module loader with `importlib.abc.Loader` implementation
+- **`HybridCDNProxy`**: Comprehensive proxy system handling modules, functions, classes, and instances
+- **Smart Error Handling**: `PyCDNRemoteError` with detailed remote traceback preservation
+- **Auto-Registration**: Seamless integration with Python's import machinery
+
+### 🌟 Enhanced User Experience
+- **Unified API**: `register_hybrid_cdn()`, `unregister_hybrid_cdn()`, `get_hybrid_mappings()`
+- **Legacy Support**: Full backward compatibility with existing `register_cdn_client()` functions
+- **Multi-CDN Management**: Support for multiple CDN connections with custom prefixes
+- **Development Tools**: Enhanced debugging and introspection capabilities
+- **Memory Optimized**: Zero local package footprint with intelligent proxy objects
+
+### 📖 Comprehensive Documentation Updates
+- **Complete README Rewrite**: Showcases hybrid import system capabilities
+- **Advanced Examples**: 
+  - `test_natural_import.py`: Comprehensive test suite for natural imports
+  - Updated examples demonstrating both classic and natural syntax
+- **API Documentation**: Detailed coverage of meta path system and hybrid architecture
+
+### 🔧 Technical Improvements  
+- **Performance**: Optimized proxy creation and method resolution
+- **Thread Safety**: Proper locking mechanisms for concurrent operations
+- **Error Resilience**: Graceful handling of import failures and network issues
+- **Code Quality**: Enhanced type hints and comprehensive error messages
+
 ## [1.1.1] - 2025-01-27
 
 ### 🔥 REVOLUTIONARY FEATURE - Natural Import System

@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 🧬 PyCDN Hybrid Import System Demo
 

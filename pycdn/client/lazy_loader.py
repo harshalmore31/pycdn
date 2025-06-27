@@ -497,7 +497,7 @@ class LazyPackage:
         except Exception as e:
             log_debug(f"Failed to enable hybrid imports: {e}")
     
-    def __getattr__(self, name: str) -> LazyModule:
+    def __getattr__(self, name: str) -> Any:
         """
         Get a lazy module for the given package name.
         
@@ -505,11 +505,19 @@ class LazyPackage:
             name: Package name
             
         Returns:
-            LazyModule instance
+            Module proxy (HybridCDNProxy if available, LazyModule as fallback)
         """
         if name.startswith('_'):
             raise AttributeError(f"LazyPackage has no attribute '{name}'")
         
+        # If we have hybrid root, delegate to it for consistency
+        if self._hybrid_root:
+            try:
+                return getattr(self._hybrid_root, name)
+            except AttributeError:
+                pass
+        
+        # Fallback to legacy LazyModule system
         # Check cache first
         if name in self._loaded_modules:
             return self._loaded_modules[name]
